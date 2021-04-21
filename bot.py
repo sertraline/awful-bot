@@ -4,7 +4,8 @@ from telethon import TelegramClient, events
 from telethon import utils
 
 import traceback
-import os, sys
+import os
+import sys
 
 from core import logger
 from core import media
@@ -23,9 +24,9 @@ def main():
     actions.check_directories(config)
 
     mimes = ['image/png', 'image/jpeg', 'image/bmp', 'image/gif',
-            'image/webp', 'video/mp4', 'video/quicktime',
-            'audio/mp3', 'audio/ogg', 'audio/m4a', 'audio/flac',
-            'audio/aac', 'image', 'document', 'text', 'audio']
+             'image/webp', 'video/mp4', 'video/quicktime',
+             'audio/mp3', 'audio/ogg', 'audio/m4a', 'audio/flac',
+             'audio/aac', 'image', 'document', 'text', 'audio']
 
     _debug_instance = logger.DebugLogging(config.DEBUG)
     debug_logger = _debug_instance.logger.debug
@@ -58,7 +59,7 @@ def main():
             client.start()
             client.run_until_disconnected()
     except Exception:
-        debug_logger(str(traceback.print_exc()))
+        debug_logger(traceback.print_exc())
 
 
 if __name__ in '__main__':

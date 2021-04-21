@@ -1,10 +1,10 @@
 import youtube_dl
 import os
 from asyncio import sleep
-import sys
 import uuid
 
-class Executor():
+
+class Executor:
 
     command = 'youdl'
     use_call_name = False
@@ -16,14 +16,12 @@ class Executor():
         self.config = config
         self.debug = debugger
 
-
     def help(self):
         return ("Youtube-dl:\n"
-            f"  {self.command} http://link.to/thevideo\n"
-            f"  {self.command} 360 http://link.to/thevideo\n"
-            "  Will download video in 360p\n"
-            "Available quality: 360/480/720\n\n")
-
+                "  %s http://link.to/thevideo\n"
+                "  %s 360 http://link.to/thevideo\n"
+                "  Will download video in 360p\n"
+                "Available quality: 360/480/720\n\n") % (self.command, self.command)
 
     async def you_dl(self, event, client, args : list):
         """
@@ -64,8 +62,8 @@ class Executor():
             ydl_opts = {
                 'outtmpl': filepath,
                 'format': (f'bestvideo[height<={quality}][ext=mp4]'
-                            f'+bestaudio[ext=m4a]/[height <=? {quality}]'
-                            '/bestvideo+bestaudio')
+                           f'+bestaudio[ext=m4a]/[height <=? {quality}]'
+                           '/bestvideo+bestaudio')
             }
 
         msg = None
@@ -102,7 +100,6 @@ class Executor():
 
         await event.reply(f'Link: {link}')
         await client.delete_messages(event.message.to_id, msg.id)
-
 
     async def call_executor(self, event, client, key):
         args = event.raw_text.split(' ')

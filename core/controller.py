@@ -1,27 +1,28 @@
-from telethon.tl.types import PeerUser, User, Channel, Chat
+from telethon.tl.types import PeerUser
+from datetime import datetime, timedelta
+
 from .private import PrivateExecutor
 from .media import MediaExtractor
-from .logger import DebugLogging
-from .actions import get_my_id, get_entity_by_any
-from datetime import datetime, timedelta
+from .actions import get_my_id
 from . import modules
+
 import traceback
 import inspect
 import pkgutil
 import re
 
-class ObjectHarvester():
+
+class ObjectHarvester:
 
     def __init__(self, debug):
         self.debug = debug
 
-
-    def harvest(self, ignore_list : list, args : list):
+    def harvest(self, ignore_list: list, args: list):
         """
         Dynamically import modules ignoring disabled modules in the config.
         """
         objects = []
-        for _loader, _module_name, _ in  pkgutil.walk_packages(modules.__path__):
+        for _loader, _module_name, _ in pkgutil.walk_packages(modules.__path__):
             if _module_name in ignore_list:
                 continue
             _module = _loader.find_module(_module_name).load_module(_module_name)
@@ -36,12 +37,12 @@ class ObjectHarvester():
                 local_args = [args[0], args[1]]
 
             obj = _module.Executor(*local_args)
-            self.debug(f"INIT {obj}")
+            self.debug("INIT %s" % obj)
             objects.append(obj)
         return objects
 
 
-class CommandController():
+class CommandController:
 
     commands = {}
     global_help = ''
@@ -61,12 +62,10 @@ class CommandController():
         self.call_harvester()
         self.map_objects()
 
-
     def call_harvester(self):
         self.harvester = ObjectHarvester(self.debug)
         self.objects = self.harvester.harvest(self.config.IGNORE,
                                               [self.config, self.debug, self.extractor])
-
 
     async def help(self, event):
         TDELTA, TDELTA_ID = self.DELAY
@@ -78,7 +77,6 @@ class CommandController():
         self.DELAY[1] = event.message.to_id
 
         await event.reply(self.global_help)
-
 
     def map_objects(self):
         """
@@ -124,7 +122,6 @@ class CommandController():
         # reserved commands to pull out data from sqlite
         self.reserved = ['next', 'get', 'cancel']
 
-
     async def distribute(self, event, client):
         if not self.id:
             self.id = await get_my_id(client)
@@ -150,13 +147,15 @@ class CommandController():
             if key in self.private.command_controller.keys():
                 if type(event.message.to_id) is PeerUser:
                     if int(event.message.to_id.user_id) != int(self.id):
-                        self.debug(('Ignoring attempt of private '
-                                   f'method call: {event.to_id.user_id} != {self.id}'))
+                        self.debug(
+                            ('Ignoring attempt of private '
+                             'method call: %s != %s') % (event.to_id.user_id, self.id)
+                        )
                         return
 
-            self.debug(f'Call: {event.raw_text}')
+            self.debug('Call: %s' % event.raw_text)
 
-            local = {key:None for key in val['args'].keys()}
+            local = {key: None for key in val['args'].keys()}
 
             # map arguments
             for arg in [['event', event], ['client', client], ['key', key]]:
@@ -167,7 +166,6 @@ class CommandController():
             except Exception:
                 self.debug(str(traceback.print_exc()))
             break
-
 
     async def check_queues(self, event, client):
         # check for existing queue from this user id in the table
@@ -241,7 +239,7 @@ class CommandController():
                                                         chat_id=to_id,
                                                         keywords=kw)
 
-            self.debug(f"Query: {query}")
+            self.debug("Query: %s" % query)
 
             sqlite_key = query[0][3]
             keyword = query[0][4]
@@ -283,7 +281,7 @@ class CommandController():
                     
                     # if user choice corresponds to row in the message
                     if int(command[1]) == int(_item_id):
-                        rest = [x for x in rest if not 'add' in x and not 'remove' in x]
+                        rest = [x for x in rest if 'add' not in x and not 'remove' in x]
                         rest = ' '.join(rest)
                         selection_key = rest.strip()
                         break
@@ -293,11 +291,10 @@ class CommandController():
                         if rest.strip() == key:
                             method = self.commands[command_key]['actions'][key]
 
-                            self.debug(f"[get] Requested method call: {method}")
+                            self.debug(f"[get] Requested method call: %s" % method)
 
                             await method(event, client, query_selection)
                             return True
-
 
     async def display_actions(self, event, client, key, item):
         # clear the message
@@ -307,9 +304,6 @@ class CommandController():
         _, entity_id, *_ = item.split(' ')
         from_id = event.message.from_id
         chat_id = event.message.to_id.user_id
-
-        #entity = await get_entity_by_any(event, client, entity_id, self.sqlite)
-        #if type(entity) is User:
 
         _action_list = []
         for kkey, vval in self.commands.items():

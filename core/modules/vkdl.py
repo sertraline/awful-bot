@@ -3,7 +3,6 @@ from core.vk_api.audio import VkAudio
 import aiohttp
 import asyncio
 import aiofiles
-import aiodns
 import socket
 import zipfile
 import traceback
@@ -13,7 +12,8 @@ import re
 from os.path import join
 from json.decoder import JSONDecodeError
 
-class Executor():
+
+class Executor:
 
     command = 'vkdl'
     use_call_name = False
@@ -33,12 +33,11 @@ class Executor():
         self.debug('INIT VkAudio')
         self.audio = VkAudio(self.vk_session, self.debug)
 
-
     def help(self):
         return (f'Download audios from VK post:\n'
-                f'  {self.config.S}vkdl link_to_wall_post\n'
-                f'  In zip format: {self.config.S}vkdl link_to_wall_post zip')
-
+                '  %svkdl link_to_wall_post\n'
+                '  In zip format: %svkdl link_to_wall_post zip') % (self.config.S,
+                                                                    self.config.S)
 
     def create_session(self):
         resolver = aiohttp.AsyncResolver(nameservers=["8.8.8.8",
@@ -48,7 +47,6 @@ class Executor():
                                      resolver=resolver,
                                      family=socket.AF_INET,
                                      ssl=False))
-
 
     async def get_file(self, sess, track_name, track_url,
                        event, client, counter, msg_id, length):
@@ -68,22 +66,21 @@ class Executor():
         await sess.close()
         return track_name
 
-
     async def user_dl(self, event, client, user_id, arg):
         msg = await event.reply('Started tracks collection')
 
         if arg:
             if 'zip' in str(arg):
                 await client.edit_message(event.message.to_id, msg.id,
-                                         ('Started tracks collection\n'
-                                         '__zip in user downloads is not '
-                                         'supported - using defaults__'))
+                                          ('Started tracks collection\n'
+                                           '__zip in user downloads is not '
+                                           'supported - using defaults__'))
         count = int(arg) if (arg and arg.isdigit()) else 10
         if not arg:
             await client.edit_message(event.message.to_id, msg.id,
-                                    ('Started tracks collection\n'
-                                    '__track counter is not specified - '
-                                    'using defaults (10 tracks)__')) 
+                                      ('Started tracks collection\n'
+                                       '__track counter is not specified - '
+                                       'using defaults (10 tracks)__'))
         post = await self.audio.get(user_id, album_id=None, count=count)
 
         song_list = []
@@ -134,10 +131,9 @@ class Executor():
             os.rmdir(randname)
         await client.delete_messages(event.message.to_id, msg.id)
 
-
     async def post_dl(self, event, client, post_id, arg):
-        if not 'access_hash' in post_id and \
-            not 'audio_playlist' in post_id and not 'album' in post_id:
+        if 'access_hash' not in post_id and \
+                'audio_playlist' not in post_id and 'album' not in post_id:
             owner, post_id = post_id.split('_')
             post = await self.audio.get_post_audio(owner, post_id)
         else:
@@ -153,7 +149,7 @@ class Executor():
                 if '%2F' in post_id:
                     post_id = post_id.replace('%2F', '/')
 
-                parts = re.findall((r'audio_playlist(-?\d+)_(\d+)'), post_id)
+                parts = re.findall(r'audio_playlist(-?\d+)_(\d+)', post_id)
                 if parts:
                     owner_id, album_id = parts[0]
                     if not post_id.endswith(album_id):
@@ -235,7 +231,6 @@ class Executor():
             os.rmdir(randname)
         await client.delete_messages(event.message.to_id, msg.id)
 
-
     async def call_executor(self, event, client):
         check = event.raw_text.split(' ')
         if len(check) < 2:
@@ -281,7 +276,7 @@ class Executor():
                 await self.post_dl(event, client, post_id, arg)
             except JSONDecodeError:
                 print(traceback.print_exc())
-                await event.reply(('Error: Could not load the playlist.'))
+                await event.reply('Error: Could not load the playlist.')
             except ValueError:
                 print(traceback.print_exc())
                 await event.reply(('Error: Could not find '

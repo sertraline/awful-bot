@@ -1,6 +1,7 @@
 import urllib.request
 
-class Executor():
+
+class Executor:
 
     command = 'curl'
     use_call_name = True
@@ -8,20 +9,17 @@ class Executor():
     def __init__(self, config, debugger):
         self.config = config
         self.debug = debugger
-    
 
     def help(self):
-        return ("Curl -I:\n"
-                f"  {self.command} http://website.com/")
+        return "Curl -I:\n %s http://website.com/" % self.command
 
-
-    def curl(self, url : str) -> list:
+    def curl(self, url: str) -> list:
         """ Curl -I: show document info (headers) """
         try:
             if not (url.startswith("http://") or url.startswith("https://")):
                 url = "http://"+url
 
-            self.debug(f"GET {url}")
+            self.debug("GET %s" % url)
             req = urllib.request.Request(
                 url,
                 data=None,
@@ -37,11 +35,10 @@ class Executor():
             response = [i for i in response if "set-cookie:" not in i.lower()]
             return response
         except urllib.error.HTTPError as e:
-            return (f"```An error has occurred: {e}.\n"
-                    f"The response code was {e.getcode()}```")
-
+            return ("```An error has occurred: %s.\n"
+                    "The response code was %s```" % (e, e.getcode()))
 
     async def call_executor(self, event, key):
         _user_text = event.raw_text.replace(key, '').strip()
         get_curl = self.curl(_user_text)
-        await event.reply(f"```{get_curl}```")
+        await event.reply("```%s```" % get_curl)

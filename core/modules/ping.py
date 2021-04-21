@@ -1,7 +1,8 @@
 from random import choice
 from copy import deepcopy
 
-class Executor():
+
+class Executor:
 
     command = 'ping'
     use_call_name = False
@@ -10,15 +11,13 @@ class Executor():
         self.config = config
         self.debug = debug
         self.dummy = deepcopy(config.PING)
-    
 
     def help(self):
-        return f"Ping:\n  {self.command}"
-
+        return "Ping:\n  %s" % self.command
 
     async def ping(self, event):
         num_choice = choice(range(len(self.dummy)))
-        if (len(self.dummy) > 1):
+        if len(self.dummy) > 1:
             toprint = self.dummy[num_choice]
             await event.reply(toprint)
             del self.dummy[num_choice]
@@ -27,7 +26,6 @@ class Executor():
             toprint = self.dummy[num_choice]
             await event.reply(toprint)
             del self.dummy[num_choice]
-    
 
     async def call_executor(self, event):
         await self.ping(event)

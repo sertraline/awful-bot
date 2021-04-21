@@ -7,8 +7,10 @@ from datetime import datetime
 import os
 from scipy.ndimage import interpolation as inter
 
+
 class TesseractError(Exception):
     pass
+
 
 class Tesseract(object):
     _lib = None
@@ -216,7 +218,6 @@ class Executor():
         d = tesseract_process_image2(tess, frame_piece)
         d = d.decode()
         return d
-
 
     async def call_executor(self, event, client):
         dtt = datetime.now()

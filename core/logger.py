@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 import difflib
 import zipfile
 
-class DebugLogging():
+
+class DebugLogging:
 
     def __init__(self, enabled):
         self.logger = logging.getLogger("awful-bot")
@@ -28,7 +29,7 @@ class DebugLogging():
             self.logger.setLevel(logging.INFO)
 
 
-class Archiver():
+class Archiver:
 
     last_check = None
 
@@ -49,6 +50,8 @@ class Archiver():
         day = int((check_date - timedelta(days=2)).strftime('%s'))
 
         for file in listdir('logs'):
+            if file.endswith('.zip'):
+                continue
             file = join('logs', file)
             if stat(file).st_mtime < day:
                 self.debug(f"Compressing {file}")
@@ -77,8 +80,8 @@ def msg_log_edit(date, chat_name, reply_msg_id,
         # ^^^ 5 user ID
         colored("{}".format("EDIT"), "yellow"),
         # ^^^ represents new line
-        messg)
-        # ^^^ user message   
+        messg)  # <- user message
+
     msg_log = "_"*21+'\n'+msg_log
 
     dt = datetime.now()
@@ -135,7 +138,7 @@ async def msg_log_chat_action(usr, event, client, utils, filepath='.'):
 
 
 def new_msg_log(date, message_id, chat_name, user_name, from_id, messg, filepath='.'):
-    msg_log = "[{}] [{}] [ {} ]\n{} {} ({}):\n{} {}\n".format(
+    msg_log = "[{}] [{}] in [ {} ]\n{} {} ({}):\n{} {}\n".format(
         date,
         # ^^^ 1 date
         colored("{}".format(message_id), "red"),
@@ -150,8 +153,8 @@ def new_msg_log(date, message_id, chat_name, user_name, from_id, messg, filepath
         # ^^^ 6 user ID
         colored("{}".format("MSG"), "yellow"),
         # ^^^ 7 represents new line
-        messg)
-        # ^^^ 8 user message
+        messg)  # <- 8 user message
+
     msg_log = "_"*21+'\n'+msg_log
 
     dt = datetime.now()
@@ -191,8 +194,8 @@ def msg_reply_log(date, message_id, chat_name, user_name,
         # ^^^ 11 limit reply by characters
         colored("{}".format("MSG"), "yellow"),
         # ^^^ 12 represents new line
-        messg)
-        # ^^^ 13 user message
+        messg)  # <- 13 user message
+
     msg_log = "_"*21+'\n'+msg_log
 
     dt = datetime.now()

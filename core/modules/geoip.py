@@ -1,6 +1,7 @@
 from geolite2 import geolite2
 
-class Executor():
+
+class Executor:
 
     command = 'geoip'
     use_call_name = True
@@ -8,14 +9,11 @@ class Executor():
     def __init__(self, config, debugger):
         self.config = config
         self.debug = debugger
-    
 
     def help(self):
-        return ("Geoip:\n"
-                f"  {self.command} 1.1.1.1")
+        return ("Geoip:\n  %s 1.1.1.1") % self.command
 
-
-    def geolite(self, msg : str) -> str:
+    def geolite(self, msg: str) -> str:
         """ Wrapper for geolite. Return data for input IP. """
         reader = geolite2.reader()
 
@@ -39,7 +37,6 @@ class Executor():
                 f"LATITUDE: {result['location']['latitude']}\n"
                 f"LONGITUDE: {result['location']['longitude']}```")
         return result
-
 
     async def call_executor(self, event, key):
         txt = event.raw_text.replace(key, '').strip()

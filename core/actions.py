@@ -1,6 +1,7 @@
 import requests
 import os
 
+
 def check_directories(config):
     if not os.path.isdir("logs"):
         os.mkdir("logs")
@@ -47,13 +48,21 @@ def check_lists(sqlite, user_id, chat_id=None):
 
 
 async def get_my_id(client):
-    ID = await client.get_entity('me')
-    return ID.id
+    _id = await client.get_entity('me')
+    return _id.id
 
 
 async def get_entity(event, client, spec_id=None):
     if not spec_id:
         from_id = event.message.from_id
+        if from_id:
+            from_id = from_id.user_id
+        else:
+            from_id = event.message.peer_id
+            if hasattr(from_id, 'user_id'):
+                from_id = from_id.user_id
+            else:
+                from_id = from_id.channel_id
     else:
         from_id = spec_id
 
@@ -75,7 +84,7 @@ async def get_entity(event, client, spec_id=None):
     return entity
 
 
-def find_user_by_username(name : str, sqlite) -> int:
+def find_user_by_username(name: str, sqlite) -> int:
     out = sqlite.fetch_call_stack()
 
     for row in out:
@@ -107,6 +116,19 @@ async def get_entity_by_any(event, client, entity_id, sqlite):
     return None
 
 
+def get_entity_id(message):
+    from_id = message.from_id
+    if from_id:
+        from_id = from_id.user_id
+    else:
+        from_id = message.peer_id
+        if hasattr(from_id, 'user_id'):
+            from_id = from_id.user_id
+        else:
+            from_id = from_id.channel_id
+    return from_id
+
+
 def get_log_path():
     files = os.listdir('logs')
 
@@ -135,11 +157,11 @@ def safe_request(url, data=None, proxy=None, ssl=True):
     }
     if not data:
         r = requests.get(url, headers=headers,
-                              proxies=proxy,
-                              verify=ssl)
+                         proxies=proxy,
+                         verify=ssl)
     else:
         r = requests.post(url, headers=headers,
-                               data=data,
-                               proxies=proxy,
-                               verify=ssl)
+                          data=data,
+                          proxies=proxy,
+                          verify=ssl)
     return r

@@ -4,8 +4,10 @@ from PIL import Image
 import pysftp
 import os
 import traceback
+from . import actions
 
-class MediaProcessor():
+
+class MediaProcessor:
 
     def __init__(self, config, debug, sqlite, mimes):
         self.config = config
@@ -13,9 +15,8 @@ class MediaProcessor():
         self.sqlite = sqlite
         self.mimes = mimes
 
-
-    async def process_media(self, dirname : str, event,
-                            client, dts : str, forwarded : bool) -> str:
+    async def process_media(self, dirname: str, event,
+                            client, dts: str, forwarded: bool) -> str:
         """
         Check message for media, detect mimetype and filesize.
         Get stickerpack name if message is sticker.
@@ -24,42 +25,42 @@ class MediaProcessor():
         if not hasattr(event.message.file, 'ext'):
             return event.raw_text
 
-        from_id = event.message.from_id
+        from_id = actions.get_entity_id(event.message)
         to_id_key = next(iter(event.message.to_id.__dict__.keys()))
         to_id = event.message.to_id.__dict__[to_id_key]
 
         # if voice
         if event.message.file.ext == '.oga':
             ext = event.message.file.ext
-            messg = f"[voice {event.message.file.duration} sec.]"
+            messg = "[voice %d sec.]" % event.message.file.duration
 
             check = self.sqlite.check_lists_queue('voice_tracker', from_id)
             if not check:
                 check = self.sqlite.check_lists_queue('voice_tracker', to_id)
                 if not check:
                     check = self.sqlite.check_lists_queue('voice_tracker',
-                                                          int(f'100{to_id}'))
+                                                          int('100%s' % to_id))
                     if not check:
                         return messg
 
-            fname = os.path.join(dirname, "voices", f"{from_id}_{dts}")
+            fname = os.path.join(dirname, "voices", "%s_%s" % (from_id, dts))
             await client.download_media(event.message, file=fname)
-            await client.send_message('me', f'#media {from_id} in {to_id}')
+            await client.send_message('me', '#media %s in %s' % (from_id, to_id))
             if not forwarded:
                 await client.forward_messages('me', event.message,
-                                                    event.message.to_id)
-            self.debug(f"Saved voice file: {fname}")
+                                              event.message.to_id)
+            self.debug("Saved voice file: %s" % fname)
 
             if self.config.SFTP_ENABLED:
                 try:
-                    self.send_sftp(f'{from_id} {dts}{ext}', 'voices')
+                    self.send_sftp('%s %s%s' % (from_id, dts, ext), 'voices')
                 except Exception:
                     traceback.print_exc()
             return messg
 
         # if sticker
         if event.message.file.sticker_set and \
-            type(event.message.file.sticker_set) is not InputStickerSetEmpty:
+                type(event.message.file.sticker_set) is not InputStickerSetEmpty:
             stick = event.message.file.sticker_set
             stickers = await client(GetStickerSetRequest(
                             stickerset=InputStickerSetID(
@@ -67,7 +68,7 @@ class MediaProcessor():
                                 access_hash=stick.access_hash
                             )
                         ))
-            messg = f"[sticker ({stickers.set.title})]"
+            messg = "[sticker (%s)]" % stickers.set.title
             return messg
 
         mime = None
@@ -77,7 +78,7 @@ class MediaProcessor():
                 break
         if mime:
             size = int(event.message.file.size/1024)
-            messg = f"[{mime} {size:02d} KB] " + event.raw_text
+            messg = f"[%s %02d KB] " % (mime, size) + event.raw_text
 
             check = self.sqlite.check_lists_queue('image_tracker', from_id)
             if not check:
@@ -85,7 +86,7 @@ class MediaProcessor():
                 if not check:
                     try:
                         check = self.sqlite.check_lists_queue('image_tracker',
-                                                              int(f'100{to_id}'))
+                                                              int('100%s' % to_id))
                     except Exception as e:
                         print(e)
                     if not check:
@@ -93,36 +94,37 @@ class MediaProcessor():
 
             if 'image' in mime:
                 if 'webp' in event.message.file.mime_type \
-                    and not type(event.message.file.sticker_set) is InputStickerSetEmpty:
+                        and not type(event.message.file.sticker_set) is InputStickerSetEmpty:
                     return messg
                 ext = event.message.file.ext
                 if ext == '.jpe':
                     ext = '.jpeg'
 
-                fname = os.path.join("images", f"{from_id}_{dts}{ext}")
+                fname = os.path.join("images", "%s_%s%s" % (from_id, dts, ext))
                 await client.download_media(event.message, file=fname)
-                await client.send_message('me', f'#media {from_id} in {to_id}')
+                await client.send_message('me', '#media %s in %s' % (from_id, to_id))
                 if not forwarded:
-                    await client.forward_messages('me', event.message,
-                                                        event.message.to_id)
-                self.debug(f"Image saved: {fname}")
+                    await client.forward_messages('me',
+                                                  event.message,
+                                                  event.message.to_id)
+                self.debug("Image saved: %s" % fname)
 
                 if 'png' in event.message.file.mime_type and self.config.OPT_PNG:
                     opt = Image.open(fname)
-                    self.debug(f"Image loaded: {fname}")
+                    self.debug("Image loaded: %s" % fname)
 
                     opt.save(fname, 'PNG', quality=70)
-                    self.debug(f"Reduced quality of PNG file: {fname}")
+                    self.debug("Reduced quality of PNG file: %s" % fname)
 
                 if 'webp' in event.message.file.mime_type and self.config.CONV:
                     conv = Image.open(fname)
-                    self.debug(f"Image loaded: {fname}")
+                    self.debug("Image loaded: %s" % fname)
 
                     conv.save(fname.replace('.webp', '.png'), format='PNG')
                     os.remove(fname)
 
                     fname = fname.replace('.webp', '.png')
-                    print(f"Converted .webp to .png: {fname}")
+                    print("Converted .webp to .png: %s" % fname)
 
                 if self.config.SFTP_ENABLED:
                     try:
@@ -131,28 +133,32 @@ class MediaProcessor():
                         traceback.print_exc()
             return messg
 
-
-    def send_sftp(self, source_file : str, dest_dir : str):
+    def send_sftp(self, source_file: str, dest_dir: str):
         self.debug("Connecting to SFTP")
 
-        with pysftp.Connection(host=self.config.SFTP_HOST, username=self.config.SFTP_USR,
-            private_key=self.config.SFTP_KEY, port=int(self.config.SFTP_PORT),
-            log=True) as sftp:
+        with pysftp.Connection(host=self.config.SFTP_HOST,
+                               username=self.config.SFTP_USR,
+                               private_key=self.config.SFTP_KEY,
+                               port=int(self.config.SFTP_PORT),
+                               log=True) as sftp:
             upload_dir = self.config.SFTP_DIR
 
             if not sftp.isdir(upload_dir+'/'+dest_dir):
                 sftp.mkdir(upload_dir+'/'+dest_dir)
-                self.debug(f'mkdir {upload_dir}/{dest_dir}')
+                self.debug('mkdir %s/%s' % (upload_dir, dest_dir))
 
             sftp.put(dest_dir+'/'+source_file, upload_dir+'/'+dest_dir+'/'+source_file)
-            self.debug(f"PUT: {upload_dir}/{dest_dir}/{source_file}")
+            self.debug("PUT: %s/%s/%s" % (upload_dir, dest_dir, source_file))
 
         self.debug("Connection closed.")
 
 
-class MediaExtractor():
+class MediaExtractor:
 
-    async def download_media(self, event, client, fname : str) -> str:
+    def __init__(self):
+        pass
+
+    async def download_media(self, event, client, fname: str) -> str:
         """
         Download image attached to message and return its filepath.
         If media is not available, look up for image attached to message
@@ -171,7 +177,8 @@ class MediaExtractor():
             return None
 
         async for msg in client.iter_messages(
-            event.to_id, max_id=reply_msg_id+1, min_id=reply_msg_id-1):
+                event.to_id, max_id=reply_msg_id+1, min_id=reply_msg_id-1
+        ):
             if msg.id == reply_msg_id:
                 if msg.media:
                     if 'image' in msg.file.mime_type:
@@ -182,4 +189,4 @@ class MediaExtractor():
                         return fname+ext
                 else:
                     break
-        return None
+        return

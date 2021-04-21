@@ -1,8 +1,8 @@
 from googletrans import Translator
 from datetime import datetime, timedelta
-import sys
 
-class Executor():
+
+class Executor:
 
     FLAGLIST = {
         "ru": "🇷🇺",
@@ -36,7 +36,6 @@ class Executor():
     def __init__(self, config, debugger):
         self.config = config
         self.debug = debugger
-    
 
     def help(self):
         gt_langlist = str([x for x in self.FLAGLIST.keys()])
@@ -49,12 +48,12 @@ class Executor():
                 f"  {self.config.S}trpl Poland can into space\n"
                 "Reply to any message with command to translate it.")
 
-
-    def translate_string(self, user_text : str, language : str,
-                         reply : str) -> str:
+    def translate_string(self, user_text: str, language: str,
+                         reply: str) -> str:
         translator = Translator()
         if user_text.startswith('`'):
             user_text = user_text.replace('`', '')
+        print(user_text, reply)
 
         for lng in self.FLAGLIST.values():
             if lng in user_text:
@@ -105,7 +104,6 @@ class Executor():
                 return (f"```[{sourceflag} {translated.src}] ➜ "
                         f"[{destflag} {translated.dest}]:\n"
                         f"{translated.text}```")
-
 
     async def call_executor(self, event, client, key):
         _start = self.config.S

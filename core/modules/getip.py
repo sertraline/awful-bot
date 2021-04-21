@@ -2,7 +2,8 @@ from socket import gethostbyname
 import sys
 import re
 
-class Executor():
+
+class Executor:
 
     command = 'getip'
     use_call_name = True
@@ -11,13 +12,10 @@ class Executor():
         self.config = config
         self.debug = debugger
 
-
     def help(self):
-        return ("IP Lookup:\n"
-                f"  {self.command} http://website.com")
+        return "IP Lookup:\n  %s http://website.com" % self.command
 
-
-    def get_host(self, msg : str) -> str:
+    def get_host(self, msg: str) -> str:
         """ Get IP behind a hostname. """
         p = '(?:http.*://)?(?P<host>[^:/ ]+).?(?P<port>[0-9]*).*'
  
@@ -31,10 +29,9 @@ class Executor():
             result = gethostbyname(result)
             return result
         except:
-            return f"An error occured: {sys.exc_info()[0]}"
-
+            return f"An error has occured: {sys.exc_info()[0]}"
 
     async def call_executor(self, event, key):
         txt = event.raw_text.replace(key, '').strip()
         result = self.get_host(txt.lower())
-        await event.reply(f"`{result}`")
+        await event.reply('`'+result+'`')

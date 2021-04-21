@@ -2,7 +2,8 @@ from multiprocessing import Process, Queue, Manager
 import traceback
 import re
 
-class Executor():
+
+class Executor:
 
     command = 'eval'
     use_call_name = False
@@ -11,12 +12,10 @@ class Executor():
         self.config = config
         self.debug = debugger
 
-
     def help(self):
-        return f"Eval:\n  {self.command} 2+2"
+        return f"Eval:\n  %s 2+2" % self.command
 
-
-    def run_pre_check(self, text : str) -> str:
+    def run_pre_check(self, text: str) -> str:
         """
         Check command for 'print' or 'len'.
         Simulate 'print' or 'len' and return the result.
@@ -42,8 +41,7 @@ class Executor():
         self.debug(f"Result: {result}")
         return result
 
-
-    def evaluater(self, expression : str, ev_dict : dict):
+    def evaluater(self, expression: str, ev_dict: dict):
         """
         Strip the string from non-math characters.
         Execute eval of the stripped string.
@@ -58,8 +56,7 @@ class Executor():
         # if eval does not succeed, result will not be set.
         # 'Error' will be displayed instead.
 
-
-    def run_multiprocess(self, text : str) -> str:
+    def run_multiprocess(self, text: str) -> str:
         """
         Run a shared dictionary instance to accept the value of the result.
         Run a separate process with eval execution.
@@ -92,8 +89,7 @@ class Executor():
                 return ev_dict['RES']
             except:
                 self.debug(str(traceback.print_exc()))
-                return None
-
+                return
 
     async def call_executor(self, event):
         try:
@@ -105,4 +101,4 @@ class Executor():
                 if out:
                     await event.reply(out)
         except:
-            self.debug(str(traceback.print_exc()))
+            self.debug(traceback.print_exc())

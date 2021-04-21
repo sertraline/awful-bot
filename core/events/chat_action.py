@@ -1,12 +1,12 @@
 from telethon import events
 from telethon.tl.functions.users import GetFullUserRequest
 
-class ChatActionObserver():
+
+class ChatActionObserver:
 
     def __init__(self, logger, utils):
         self.logger = logger
         self.utils = utils
-
 
     @events.register(events.ChatAction)
     async def chat_action(self, event):

@@ -4,7 +4,8 @@ import cv2
 import os
 import sys
 
-class Executor():
+
+class Executor:
 
     command = 'image'
     use_call_name = False
@@ -14,33 +15,30 @@ class Executor():
         self.debug = debugger
         self.extractor = extractor
 
-
     def help(self):
-        return f"Image tools:\n  {self.config.S}image help"
+        return "Image tools:\n  %simage help" % self.config.S
 
-
-    def grayscale(self, filepath : str) -> str:
+    def grayscale(self, filepath: str) -> str:
         """
         Convert to grayscale.
         Return filepath to grayscale image.
         """
         image = cv2.imread(filepath)
-        self.debug(f"Loaded image: {filepath}")
+        self.debug("Loaded image: %s" % filepath)
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         cv2.imwrite(filepath, image)
-        self.debug(f"Write the result (grayscale) to {filepath}")
+        self.debug("Write the result (grayscale) to %s" % filepath)
         return filepath
 
-
-    def rotate(self, filepath : str, degree : int) -> str:
+    def rotate(self, filepath: str, degree: int) -> str:
         """
         Rotate image based on degree.
         Return filepath to rotated image.
         """
         image = cv2.imread(filepath)
-        self.debug(f"Loaded image: {filepath}")
+        self.debug("Loaded image: %s" % filepath)
 
         height, width = image.shape[:2]
         image_center = (width/2, height/2)
@@ -48,8 +46,8 @@ class Executor():
         rotation_mat = cv2.getRotationMatrix2D(image_center, degree, 1.)
 
         # rotation calculates the cos and sin, taking absolutes of those.
-        abs_cos = abs(rotation_mat[0,0]) 
-        abs_sin = abs(rotation_mat[0,1])
+        abs_cos = abs(rotation_mat[0, 0])
+        abs_sin = abs(rotation_mat[0, 1])
 
         # find the new width and height bounds
         bound_w = int(height * abs_sin + width * abs_cos)
@@ -78,14 +76,13 @@ class Executor():
         self.debug(f"Write the result (rotate) to {filepath}")
         return filepath
 
-
-    def flip(self, filepath : str, mode : str) -> str:
+    def flip(self, filepath: str, mode: str) -> str:
         """
         Flip image vertically or horizontally.
         """
 
         image = cv2.imread(filepath)
-        self.debug(f"Loaded image: {filepath}")
+        self.debug("Loaded image: %s" % filepath)
 
         if mode.startswith("h"):
             image = cv2.flip(image, 0)
@@ -93,11 +90,10 @@ class Executor():
             image = cv2.flip(image, 1)
 
         cv2.imwrite(filepath, image)
-        self.debug(f"Write the result (flip) to {filepath}")
+        self.debug("Write the result (flip) to %s" % filepath)
         return filepath
 
-
-    def resize(self, filepath : str, fx : float, fy : float, method=None) -> str:
+    def resize(self, filepath: str, fx: float, fy: float, method=None) -> str:
         """
         Resize image based on horizontal (fx) and vertical (fy)
         multipliers.
@@ -108,22 +104,22 @@ class Executor():
         # set resize limit
         # (avoid OutOfMemory error)
         if fx > 10:
-            self.debug(f"Lowering fx={fx} to 10")
+            self.debug("Lowering fx=%d to 10" % fx)
             fx = 10
         if fy > 10:
-            self.debug(f"Lowering fy={fy} to 10")
+            self.debug("Lowering fy=%d to 10" % fy)
             fy = 10
 
         image = cv2.imread(filepath)
-        self.debug(f"Loaded image: {filepath}")
+        self.debug("Loaded image: %s" % filepath)
 
         if image.shape[0] > 2080:
             # lower the limit for bigger images
             if fx >= 10:
-                self.debug(f"Lowering fx={fx} to 4")
+                self.debug("Lowering fx=%d to 4" % fx)
                 fx = 4
             if fy >= 10:
-                self.debug(f"Lowering fy={fy} to 4")
+                self.debug("Lowering fy=%d to 4" % fy)
                 fy = 4
 
         inters = {
@@ -142,11 +138,10 @@ class Executor():
             image = cv2.resize(image, None, fx=fx, fy=fy)
 
         cv2.imwrite(filepath, image)
-        self.debug(f"Write the result (resize) to {filepath}")
+        self.debug("Write the result (resize) to %s" % filepath)
         return filepath
 
-
-    def denoise(self, filepath : str, filter_strength : int) -> str:
+    def denoise(self, filepath: str, filter_strength: int) -> str:
         """
         Apply denoising filter.
         If filter strength is not specified, use defaults (13).
@@ -154,21 +149,20 @@ class Executor():
         Return filepath to denoised image.
         """
         image = cv2.imread(filepath)
-        self.debug(f"Loaded image: {filepath}")
+        self.debug("Loaded image: %s" % filepath)
 
         if len(image.shape) < 3:
             image = cv2.fastNlMeansDenoisingColored(image, None, h=filter_strength,
-                templateWindowSize=14, searchWindowSize=21)
+                                                    templateWindowSize=14, searchWindowSize=21)
         else:
             image = cv2.fastNlMeansDenoising(image, None, h=filter_strength,
-                templateWindowSize=14, searchWindowSize=21)
+                                             templateWindowSize=14, searchWindowSize=21)
 
         cv2.imwrite(filepath, image)
-        self.debug(f"Write the result (denoise) to {filepath}")
+        self.debug("Write the result (denoise) to %s" % filepath)
         return filepath
 
-
-    def parse_args(self, args : list, fname : str) -> list:
+    def parse_args(self, args: list, fname: str) -> list:
 
         if args[1] == "grayscale":
             filepath = self.grayscale(fname)
@@ -176,8 +170,8 @@ class Executor():
         elif args[1] == "flip":
             errmessg = ("Please, specify mode.\n"
                         "v, h = vertical, horizontal\n"
-                        f"{self.config.S}image flip v\n"
-                        f"{self.config.S}image flip h")
+                        "%simage flip v\n"
+                        "%simage flip h") % (self.config.S, self.config.S)
 
             if (len(args) < 3) or (len(args) > 3):
                 return [-1, errmessg, fname]
@@ -187,7 +181,7 @@ class Executor():
 
         elif args[1] == "rotate":
             errmessg = ("Please, specify a degree.\n"
-                        f"{self.config.S}image rotate 45")
+                        "%simage rotate 45") % self.config.S
 
             if (len(args) < 3) or (len(args) > 3):
                 return [-1, errmessg, fname]
@@ -200,9 +194,9 @@ class Executor():
                 filepath = self.rotate(fname, degree)
 
         elif args[1] == "resize":
-            errmessg = (f"Please, specify correct multipliers "
+            errmessg = ("Please, specify correct multipliers "
                         "fx and fy.\n"
-                        f"{self.config.S}image resize 2 2")
+                        "%simage resize 2 2") % self.config.S
 
             if (len(args) < 4) or (len(args) > 5):
                 return [-1, errmessg, fname]
@@ -227,14 +221,15 @@ class Executor():
                 try:
                     filt_st = int(args[2])
                 except:
-                    return [-1, (f"Please, specify correct filter "
-                                 "strength (int)\n"
-                                 f"{self.config.S}image denoise 21"),
-                        fname]
+                    return [-1,
+                            ("Please, specify correct filter "
+                             "strength (int)\n"
+                             "%simage denoise 21") % self.config.S,
+                            fname
+                            ]
                 filepath = self.denoise(fname, filt_st)
 
         return [1, filepath]
-
 
     async def call_executor(self, event, client):
         args = event.raw_text.split()
@@ -246,38 +241,39 @@ class Executor():
         if args[1] == 'help':
             self.debug("Return message for <image help>")
             await event.reply(f"Image tools:\n"
-                    f"  {S}image grayscale\n\n"
-                    f"  {S}image rotate [degree]: `{S}image rotate 90`\n\n"
-                    f"  {S}image resize [fx] [fy] [interpolation]:\n"
-                    f"      `{S}image resize 2.5 2.5 linear`\n"
-                    f"      `{S}image resize 2 2`\n"
-                    f"      interpolation: __cubic, linear, lanczos, nearest__\n\n"
-                    f"  {S}image denoise [filter_strength]: `{S}image denoise 13`\n\n"
-                    f"  {S}image flip [v|h]: `{S}image flip h`"
-                    )
+                              f"  {S}image grayscale\n\n"
+                              f"  {S}image rotate [degree]: `{S}image rotate 90`\n\n"
+                              f"  {S}image resize [fx] [fy] [interpolation]:\n"
+                              f"      `{S}image resize 2.5 2.5 linear`\n"
+                              f"      `{S}image resize 2 2`\n"
+                              f"      interpolation: __cubic, linear, lanczos, nearest__\n\n"
+                              f"  {S}image denoise [filter_strength]: `{S}image denoise 13`\n\n"
+                              f"  {S}image flip [v|h]: `{S}image flip h`"
+                              )
 
         baseline = ['grayscale', 'rotate', 'resize', 'denoise', 'flip']
         if not args[1] in baseline:
             self.debug("image: No functioning args found in message, ignoring")
             return
 
-        dtt = datetime.now()
-        fname = f"{dtt.year}{dtt.month:02}{dtt.day:02}_{dtt.hour:02}{dtt.minute:02}{dtt.second:02}"
+        at = datetime.now()
+        fname = f"{at.year}{at.month:02}{at.day:02}_{at.hour:02}{at.minute:02}{at.second:02}"
         
         fname = await self.extractor.download_media(event, client, fname)
         if not fname:
             return
         result = self.parse_args(args, fname)
         if result[0] == 1:
-            await event.reply(file=result[1], force_document=True)
+            if 'resize' in args[1] or 'denoise' in args[1]:
+                force_document = True
+            else:
+                force_document = False
+            await event.reply(file=result[1], force_document=force_document)
             # force_document: no compression
             os.remove(result[1])
-            self.debug(f"Removed: {result[1]}")
+            self.debug("Removed: %s" % result[1])
         else:
             # error
             await event.reply(result[1])
             os.remove(result[2])
-            self.debug(f"Removed: {result[2]}")
-        return
-
-
+            self.debug("Removed: %s" % result[2])
