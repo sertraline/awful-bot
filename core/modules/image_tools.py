@@ -1,8 +1,11 @@
-from PIL import Image
-from datetime import datetime
+import asyncio
 import cv2
 import os
 import sys
+
+from PIL import Image
+from datetime import datetime
+from subprocess import check_output
 
 
 class Executor:
@@ -92,6 +95,31 @@ class Executor:
         cv2.imwrite(filepath, image)
         self.debug("Write the result (flip) to %s" % filepath)
         return filepath
+
+    def resize_ffmpeg(self, filepath: str, fx: float, fy: float, d='/') -> str:
+        """
+        Resize video to given aspect ratio using ffmpeg.
+        """
+        out_file = 'resized_'+filepath
+        fx, fy = int(fx), int(fy)
+        if fx > 4:
+            fx = 4
+        if fy > 4:
+            fy = 4
+
+        fix_division = ", pad=ceil(iw/2)*2:ceil(ih/2)*2"
+        if d == '/':
+            # downscale
+            scale = 'scale=iw/%d:ih/%d' % (fx, fy) 
+        else:
+            # upscale
+            scale = 'scale=iw*%d:ih*%d' % (fx, fy)
+        scale_filter = scale + fix_division
+
+        result = check_output(['ffmpeg', '-i', filepath, '-vf', scale_filter, out_file])
+        os.remove(filepath)
+        return out_file
+
 
     def resize(self, filepath: str, fx: float, fy: float, method=None) -> str:
         """
@@ -194,6 +222,7 @@ class Executor:
                 filepath = self.rotate(fname, degree)
 
         elif args[1] == "resize":
+            self.debug('Enter resize')
             errmessg = ("Please, specify correct multipliers "
                         "fx and fy.\n"
                         "%simage resize 2 2") % self.config.S
@@ -201,17 +230,23 @@ class Executor:
             if (len(args) < 4) or (len(args) > 5):
                 return [-1, errmessg, fname]
 
-            if len(args) == 4:
-                try:
-                    fx, fy = (float(args[2]), float(args[3]))
-                except:
-                    return [-1, errmessg, fname]
+            try:
+                fx, fy = (float(args[2]), float(args[3]))
+            except:
+                return [-1, errmessg, fname]
+
+            if fname.endswith('.mp4'):
+                self.debug('Resizing video/gif')
+                if len(args) == 5:
+                    d = args[4]
+                else:
+                    d = '/'
+                filepath = self.resize_ffmpeg(fname, fx, fy, d)
+            elif len(args) == 4:
+                self.debug('Resizing image %f/%f' % (fx, fy))
                 filepath = self.resize(fname, fx, fy)
             elif len(args) == 5:
-                try:
-                    fx, fy = (float(args[2]), float(args[3]))
-                except:
-                    return [-1, errmessg, fname]
+                self.debug('Resizing image %f/%f/%s' % (fx, fy, args[4]))
                 filepath = self.resize(fname, fx, fy, args[4])
 
         elif args[1] == "denoise":
@@ -232,6 +267,7 @@ class Executor:
         return [1, filepath]
 
     async def call_executor(self, event, client):
+        self.debug('Enter executor of %s' % repr(self))
         args = event.raw_text.split()
 
         if len(args) == 1:
@@ -259,15 +295,19 @@ class Executor:
         at = datetime.now()
         fname = f"{at.year}{at.month:02}{at.day:02}_{at.hour:02}{at.minute:02}{at.second:02}"
         
+        self.debug('Call download media')
         fname = await self.extractor.download_media(event, client, fname)
         if not fname:
             return
-        result = self.parse_args(args, fname)
+
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, self.parse_args, *(args, fname))
+
         if result[0] == 1:
-            if 'resize' in args[1] or 'denoise' in args[1]:
-                force_document = True
-            else:
+            if result[1].endswith('mp4'):
                 force_document = False
+            else:
+                force_document = bool('resize' in args[1] or 'denoise' in args[1]) 
             await event.reply(file=result[1], force_document=force_document)
             # force_document: no compression
             os.remove(result[1])
