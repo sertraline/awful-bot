@@ -107,10 +107,10 @@ class Executor:
         if fy > 4:
             fy = 4
 
-        fix_division = ", pad=ceil(iw/2)*2:ceil(ih/2)*2"
+        fix_division = ", crop=trunc(iw/2)*2:trunc(ih/2)*2"
         if d == '/':
             # downscale
-            scale = 'scale=iw/%d:ih/%d' % (fx, fy) 
+            scale = 'scale=iw/%d:ih/%d' % (fx, fy)
         else:
             # upscale
             scale = 'scale=iw*%d:ih*%d' % (fx, fy)
