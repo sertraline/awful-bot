@@ -6,6 +6,7 @@ from telethon import utils
 import traceback
 import os
 import sys
+import uvloop
 
 from core import logger
 from core import media
@@ -63,4 +64,5 @@ def main():
 
 
 if __name__ in '__main__':
+    uvloop.install()
     main()
