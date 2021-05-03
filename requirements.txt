@@ -20,5 +20,5 @@ Telethon
 termcolor
 vk-api
 ujson
-uvloop
+uvloop; sys_platform != 'win32'
 wheel
