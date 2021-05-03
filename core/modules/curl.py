@@ -1,4 +1,6 @@
+import asyncio
 import urllib.request
+from typing import Union
 
 
 class Executor:
@@ -13,7 +15,7 @@ class Executor:
     def help(self):
         return "Curl -I:\n %s http://website.com/" % self.command
 
-    def curl(self, url: str) -> list:
+    def curl(self, url: str) -> Union[str, list]:
         """ Curl -I: show document info (headers) """
         try:
             if not (url.startswith("http://") or url.startswith("https://")):
@@ -40,5 +42,6 @@ class Executor:
 
     async def call_executor(self, event, key):
         _user_text = event.raw_text.replace(key, '').strip()
-        get_curl = self.curl(_user_text)
+        loop = asyncio.get_event_loop()
+        get_curl = await loop.run_in_executor(None, self.curl, _user_text)
         await event.reply("```%s```" % get_curl)

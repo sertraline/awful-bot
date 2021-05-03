@@ -1,4 +1,5 @@
 from socket import gethostbyname
+from typing import Union
 import sys
 import re
 
@@ -15,7 +16,7 @@ class Executor:
     def help(self):
         return "IP Lookup:\n  %s http://website.com" % self.command
 
-    def get_host(self, msg: str) -> str:
+    def get_host(self, msg: str) -> Union[str, None]:
         """ Get IP behind a hostname. """
         p = '(?:http.*://)?(?P<host>[^:/ ]+).?(?P<port>[0-9]*).*'
  
@@ -29,7 +30,7 @@ class Executor:
             result = gethostbyname(result)
             return result
         except:
-            return f"An error has occured: {sys.exc_info()[0]}"
+            return "An error has occured: %s" % sys.exc_info()[0]
 
     async def call_executor(self, event, key):
         txt = event.raw_text.replace(key, '').strip()

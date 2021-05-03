@@ -1,3 +1,4 @@
+import asyncio
 from pyowm.owm import OWM
 from datetime import datetime
 
@@ -58,5 +59,6 @@ class Executor:
 
     async def call_executor(self, event, key):
         city = event.raw_text.replace(key, '').strip()
-        result = self.getweather(city, self.api)
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, self.getweather, *(city, self.api))
         await event.reply(result)

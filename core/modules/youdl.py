@@ -1,3 +1,5 @@
+import asyncio
+
 import youtube_dl
 import os
 from asyncio import sleep
@@ -23,7 +25,7 @@ class Executor:
                 "  Will download video in 360p\n"
                 "Available quality: 360/480/720\n\n") % (self.command, self.command)
 
-    async def you_dl(self, event, client, args : list):
+    async def you_dl(self, event, client, args: list):
         """
         Generate random filename. Check for video quality and duration.
         Return if duration > self.LENGTH//60 mins.
@@ -55,10 +57,10 @@ class Executor:
             ydl_opts = {
                 'outtmpl': filepath,
                 'format': ('bestvideo[ext=mp4]+bestaudio[ext=m4a]'
-                            '/bestvideo+bestaudio')
+                           '/bestvideo+bestaudio')
             }
         else:
-            self.debug(f"Quality: {quality}")
+            self.debug("Quality: %s" % quality)
             ydl_opts = {
                 'outtmpl': filepath,
                 'format': (f'bestvideo[height<={quality}][ext=mp4]'
@@ -66,19 +68,21 @@ class Executor:
                            '/bestvideo+bestaudio')
             }
 
-        msg = None
         try:
+            loop = asyncio.get_event_loop()
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(youlink, download=False)
+                info = await loop.run_in_executor(None,
+                                                  lambda: ydl.extract_info(youlink, download=False))
                 if int(info['duration']) > self.LENGTH:
                     await event.reply(('Sorry, your video is too long. '
-                                       f'Maximum length is {self.LENGTH//60} minutes.'))
+                                       'Maximum length is %d minutes.') % (self.LENGTH//60))
                     return
                 msg = await event.reply('Download started')
-                ydl.download([youlink])
+                await loop.run_in_executor(None, lambda: ydl.download([youlink]))
         except:
             await event.reply(('An error has occured. '
                                'Probably, your video is not available.'))
+            return
 
         while not os.path.isfile(filepath):
             await sleep(0.5)
@@ -95,10 +99,10 @@ class Executor:
         # move file to server directory, send a link to download
         new_dir = os.path.join(server_path, str(setname)+'.mp4')
         os.rename(filepath, new_dir)
-        link = f'{url}/{setname}.mp4'
-        self.debug(f'Moved: {new_dir} with link: {url}/{setname}.mp4')
+        link = '%s/%s.mp4' % (url, setname)
+        self.debug('Moved: %s with link: %s/%s.mp4' % (new_dir, url, setname))
 
-        await event.reply(f'Link: {link}')
+        await event.reply('Link: %s' % link)
         await client.delete_messages(event.message.to_id, msg.id)
 
     async def call_executor(self, event, client, key):

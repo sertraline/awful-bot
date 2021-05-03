@@ -1,4 +1,6 @@
-from multiprocessing import Process, Queue, Manager
+from multiprocessing import Process, Manager
+from typing import Union
+import asyncio
 import traceback
 import re
 
@@ -15,7 +17,7 @@ class Executor:
     def help(self):
         return f"Eval:\n  %s 2+2" % self.command
 
-    def run_pre_check(self, text: str) -> str:
+    def run_pre_check(self, text: str) -> Union[str, None]:
         """
         Check command for 'print' or 'len'.
         Simulate 'print' or 'len' and return the result.
@@ -41,7 +43,7 @@ class Executor:
         self.debug(f"Result: {result}")
         return result
 
-    def evaluater(self, expression: str, ev_dict: dict):
+    def evaluater(self, expression: str, ev_dict: dict) -> None:
         """
         Strip the string from non-math characters.
         Execute eval of the stripped string.
@@ -56,7 +58,7 @@ class Executor:
         # if eval does not succeed, result will not be set.
         # 'Error' will be displayed instead.
 
-    def run_multiprocess(self, text: str) -> str:
+    def run_multiprocess(self, text: str) -> Union[str, None]:
         """
         Run a shared dictionary instance to accept the value of the result.
         Run a separate process with eval execution.
@@ -97,7 +99,8 @@ class Executor:
             if out:
                 await event.reply(out)
             else:
-                out = self.run_multiprocess(event.raw_text)
+                loop = asyncio.get_event_loop()
+                out = await loop.run_in_executor(None, self.run_multiprocess, event.raw_text)
                 if out:
                     await event.reply(out)
         except:

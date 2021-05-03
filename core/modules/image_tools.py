@@ -1,4 +1,6 @@
 import asyncio
+import subprocess
+
 import cv2
 import os
 import sys
@@ -116,7 +118,10 @@ class Executor:
             scale = 'scale=iw*%d:ih*%d' % (fx, fy)
         scale_filter = scale + fix_division
 
-        result = check_output(['ffmpeg', '-i', filepath, '-vf', scale_filter, out_file])
+        try:
+            check_output(['ffmpeg', '-i', filepath, '-vf', scale_filter, out_file], timeout=240)
+        except subprocess.TimeoutExpired:
+            out_file = -1
         os.remove(filepath)
         return out_file
 
@@ -191,6 +196,7 @@ class Executor:
         return filepath
 
     def parse_args(self, args: list, fname: str) -> list:
+        filepath = None
 
         if args[1] == "grayscale":
             filepath = self.grayscale(fname)
@@ -242,6 +248,8 @@ class Executor:
                 else:
                     d = '/'
                 filepath = self.resize_ffmpeg(fname, fx, fy, d)
+                if filepath == -1:
+                    return [-1, 'Timeout exceeded', fname]
             elif len(args) == 4:
                 self.debug('Resizing image %f/%f' % (fx, fy))
                 filepath = self.resize(fname, fx, fy)
@@ -303,17 +311,23 @@ class Executor:
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, self.parse_args, *(args, fname))
 
-        if result[0] == 1:
-            if result[1].endswith('mp4'):
+        if len(result) == 2:
+            status, filename = result
+
+            if filename.endswith('mp4'):
                 force_document = False
             else:
                 force_document = bool('resize' in args[1] or 'denoise' in args[1]) 
-            await event.reply(file=result[1], force_document=force_document)
+            await event.reply(file=filename, force_document=force_document)
             # force_document: no compression
             os.remove(result[1])
             self.debug("Removed: %s" % result[1])
         else:
             # error
-            await event.reply(result[1])
-            os.remove(result[2])
-            self.debug("Removed: %s" % result[2])
+            status, error_message, filename = result
+            await event.reply(error_message)
+            try:
+                os.remove(filename)
+                self.debug("Removed: %s" % filename)
+            except OSError:
+                pass

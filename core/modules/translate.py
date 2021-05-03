@@ -1,3 +1,4 @@
+import asyncio
 from googletrans import Translator
 from datetime import datetime, timedelta
 
@@ -129,7 +130,9 @@ class Executor:
 
         txt = event.raw_text.replace(key+language, '')
 
-        translated = self.translate_string(txt, language, reply_to_usr_text)
+        loop = asyncio.get_event_loop()
+        translated = await loop.run_in_executor(None, self.translate_string,
+                                                *(txt, language, reply_to_usr_text))
 
         if translated.startswith('```Languages list:\n  '):
             TDELTA, TDELTA_ID = self.DELAY

@@ -1,4 +1,5 @@
 from geolite2 import geolite2
+import asyncio
 
 
 class Executor:
@@ -11,7 +12,7 @@ class Executor:
         self.debug = debugger
 
     def help(self):
-        return ("Geoip:\n  %s 1.1.1.1") % self.command
+        return "Geoip:\n  %s 1.1.1.1" % self.command
 
     def geolite(self, msg: str) -> str:
         """ Wrapper for geolite. Return data for input IP. """
@@ -40,5 +41,6 @@ class Executor:
 
     async def call_executor(self, event, key):
         txt = event.raw_text.replace(key, '').strip()
-        result = self.geolite(txt.lower())
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, self.geolite, txt.lower())
         await event.reply(result)

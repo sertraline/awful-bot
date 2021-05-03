@@ -1,10 +1,11 @@
+import asyncio
 import ctypes
 import ctypes.util
 import cv2
+import os
 import numpy as np
 from os.path import isfile
 from datetime import datetime
-import os
 from scipy.ndimage import interpolation as inter
 
 
@@ -225,7 +226,8 @@ class Executor():
         fname = await self.extractor.download_media(event, client, fname)
         if not fname:
             return
-        ocr = self.img_ocr(fname, event.raw_text[:8])
+        loop = asyncio.get_event_loop()
+        ocr = await loop.run_in_executor(None, self.img_ocr, *(fname, event.raw_text[:8]))
         if ocr:
             await event.reply(str(ocr))
         os.remove(fname)
