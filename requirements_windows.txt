@@ -20,5 +20,4 @@ Telethon
 termcolor
 vk-api
 ujson
-uvloop
 wheel

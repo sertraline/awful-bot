@@ -6,7 +6,6 @@ from telethon import utils
 import traceback
 import os
 import sys
-import uvloop
 
 from core import logger
 from core import media
@@ -19,6 +18,8 @@ from core.events.new import NewMessageObserver
 from core.events.chat_action import ChatActionObserver
 
 import config
+if os.name != 'nt':
+    import uvloop
 
 
 def main():
@@ -64,5 +65,6 @@ def main():
 
 
 if __name__ in '__main__':
-    uvloop.install()
+    if os.name != 'nt':
+        uvloop.install()
     main()
