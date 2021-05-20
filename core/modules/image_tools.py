@@ -42,43 +42,11 @@ class Executor:
         Rotate image based on degree.
         Return filepath to rotated image.
         """
-        image = cv2.imread(filepath)
+        image = Image.open(filepath)
         self.debug("Loaded image: %s" % filepath)
-
-        height, width = image.shape[:2]
-        image_center = (width/2, height/2)
-
-        rotation_mat = cv2.getRotationMatrix2D(image_center, degree, 1.)
-
-        # rotation calculates the cos and sin, taking absolutes of those.
-        abs_cos = abs(rotation_mat[0, 0])
-        abs_sin = abs(rotation_mat[0, 1])
-
-        # find the new width and height bounds
-        bound_w = int(height * abs_sin + width * abs_cos)
-        bound_h = int(height * abs_cos + width * abs_sin)
-
-        # subtract old image center 
-        # and adding the new image center coordinates
-        rotation_mat[0, 2] += bound_w/2 - image_center[0]
-        rotation_mat[1, 2] += bound_h/2 - image_center[1]
-
-        # rotate image with the new bounds and translated rotation matrix
-        rotated_mat = cv2.warpAffine(image, rotation_mat, (bound_w, bound_h))
-        height, width = rotated_mat.shape[:2]
-
-        new_h = None
-        new_w = None
-        # Resize image if it is too large.
-        # Avoid outofmemory error and bad usage patterns
-        if height > 4000 or width > 4000:
-            new_h, new_w = (height//2, width//2)
-
-        if new_w:
-            rotated_mat = cv2.resize(rotated_mat, (new_w, new_h))
-
-        cv2.imwrite(filepath, rotated_mat)
-        self.debug(f"Write the result (rotate) to {filepath}")
+        rotated = image.rotate(degree, expand=1)
+        rotated.save(filepath)
+        self.debug("Saved image: %s" % filepath)
         return filepath
 
     def flip(self, filepath: str, mode: str) -> str:
