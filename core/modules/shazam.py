@@ -33,14 +33,35 @@ class Executor:
                     name.append(track['title'])
                 if 'subtitle' in track:
                     name.append(track['subtitle'])
-                name = ' — '.join(name)
+                name = '> ' + ' — '.join(name)
 
                 cover = None
                 if 'images' in track:
                     images = track['images']
                     if 'coverart' in images:
                         cover = images['coverart']
-                return name, cover
+
+                meta = ""
+                sect = track['sections'][0]['metadata']
+                try:
+                    album = sect[0]
+                    album = '> ' + album['text'] + '\n'
+                    meta += album
+                except:
+                    pass
+                try:
+                    label = sect[1]
+                    label = '> ' + label['text'] + '\n'
+                    meta += label
+                except:
+                    pass
+                try:
+                    year = sect[2]
+                    year = '> ' + label['text'] + '\n'
+                    meta += year
+                except:
+                    pass
+                return name, cover, meta
 
 
     async def call_executor(self, event, client, key):
@@ -49,15 +70,16 @@ class Executor:
         fname = await self.extractor.download_media(event, client, fname)
         if not fname:
             return
-
         reply = await event.reply("Processing started")
         await client.download_media(event.message, file=fname)
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(None, self.shazam, fname)
         if result:
             msg = "%s\n" % result[0]
+            if result[2]:
+                msg += (result[2] + '\n')
             if result[1]:
-                msg += result[1]
+                msg += (result[1] + '\n')
             await event.reply(msg)
         await reply.delete()
         os.remove(fname)
