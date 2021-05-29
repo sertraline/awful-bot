@@ -167,11 +167,12 @@ class MediaExtractor:
         if event.message.media:
             mime = event.message.file.mime_type
             if 'image' in mime or 'video' in mime or 'audio' in mime:
-                await client.download_media(event.message, file=fname)
                 ext = event.message.file.ext
                 if ext == '.jpe':
                     ext = '.jpg'
-                return fname+ext
+                fname += ext
+                await client.download_media(event.message, file=fname)
+                return fname
 
         reply_msg_id = event.message.reply_to_msg_id
         if not reply_msg_id:
@@ -184,11 +185,12 @@ class MediaExtractor:
                 if msg.media:
                     mime = msg.file.mime_type
                     if 'image' in mime or 'video' in mime or 'audio' in mime:
-                        await client.download_media(msg, file=fname) 
                         ext = msg.file.ext
                         if ext == '.jpe':
                             ext = '.jpg'
-                        return fname+ext
+                        fname += ext
+                        await client.download_media(msg, file=fname) 
+                        return fname
                 else:
                     break
         return

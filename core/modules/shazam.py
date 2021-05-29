@@ -23,7 +23,10 @@ class Executor:
         shazam = Shazam(content_to_recognize)
         recognize_generator = shazam.recognizeSong()
         while True:
-            result = next(recognize_generator)
+            try:
+                result = next(recognize_generator)
+            except (TypeError, StopIteration):
+                return
             if result[1]['matches']:
                 track = result[1]['track']
                 print(track)
@@ -80,7 +83,9 @@ class Executor:
                 msg += (result[2] + '\n')
             if result[1]:
                 msg += (result[1] + '\n')
+            await reply.delete()
             await event.reply(msg)
-        await reply.delete()
+        else:
+            await reply.edit("Failed to recognize song")
         os.remove(fname)
 
