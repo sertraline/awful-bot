@@ -1,6 +1,7 @@
 from ShazamAPI import Shazam
 import asyncio
 import uuid
+import os
 
 
 class Executor:
@@ -59,4 +60,5 @@ class Executor:
                 msg += result[1]
             await event.reply(msg)
         await reply.delete()
+        os.remove(fname)
 
