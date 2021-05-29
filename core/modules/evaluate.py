@@ -15,33 +15,59 @@ class Executor:
         self.debug = debugger
 
     def help(self):
-        return f"Eval:\n  %s 2+2" % self.command
+        return "Eval:\n  %s 2+2" % self.command
 
-    def run_pre_check(self, text: str) -> Union[str, None]:
-        """
-        Check command for 'print' or 'len'.
-        Simulate 'print' or 'len' and return the result.
-        Direct execution of eval is not allowed.
-        """
-        result = None
+    def parse_eval(self, text):
+        if len(text) < len("_eval"):
+            return
+        if len(str(text)) >= 120:
+            return 1, 'Whoa, this expression is so big ( ͡° ͜ʖ ͡°)'
+        expression = text.replace(f"{self.config.S}eval", '').strip()
+        if '🔟' in expression:
+            expression = expression.replace('🔟', '10')
+        if '🔢' in expression:
+            expression = expression.replace('🔢', '1234')
 
-        if "print" in text.lower():
-            self.debug("Found print in eval expression")
-            findres = text.find("print(")
-            rfindres = text.find(")", findres)
-            if findres != -1 and rfindres != -1:
-                result = text[(findres + 6):rfindres]
-                result = result.replace('"', '')  
-        elif "len" in text.lower():
-            self.debug("Found len in eval expression")
-            findres = text.find("len(")
-            rfindres = text.find(")", findres)
-            if findres != -1 and rfindres != -1:
-                result = text[(findres + 4):rfindres]
-                result = result.replace('"', '')
-                result = str(len(result))
-        self.debug(f"Result: {result}")
-        return result
+        blacklist = [
+            r'__.*?__',
+            r'os\.',
+            r'sys\.',
+            r'\.?system',
+            r'\.class',
+            r'\.name',
+            r'\.base',
+            r'\.subclasses',
+            r'\.dump'
+            'builtins',
+            'builtinimporter',
+            'globals',
+            'locals',
+            'load_module',
+            'exec',
+            'eval',
+            'chr',
+            'ord',
+            'getattr',
+            'setattr',
+            'input',
+            'bash ',
+            'import ',
+        ]
+        sub_rules = '(' + '|'.join(blacklist).strip('|') + ')'
+        expression = re.sub(sub_rules, '_', expression, flags=re.IGNORECASE)
+
+        check_range = re.findall(r'range\((\d+)\)', expression)
+        if check_range:
+            for _range in check_range:
+                if int(_range) > 50:
+                    expression = re.sub(r'range\(%d\)' % int(_range), 'range(50)', expression)
+
+        expression = re.sub(r'print\(', 'str(', expression)
+        # properly check for unmatched quotes
+        expression = re.sub(r'str\((\'|\")(.*)(\'|\")\)', r'"\g<2>"', expression)
+
+        self.debug("Eval end result: %s" % expression)
+        return expression.strip()
 
     def evaluater(self, expression: str, ev_dict: dict) -> None:
         """
@@ -49,14 +75,23 @@ class Executor:
         Execute eval of the stripped string.
         """
         # accepts shared dict
-        ev_dict['RES'] = 'Error'
-        regex = re.compile(r'[^\d\.\*\+\-\/\(\)]')
-        expression = regex.sub('', expression)
-        result = str(eval(expression, {'__builtins__': None}))
-        # isolate eval from access to the scope ^^^^^^^^^
-        ev_dict['RES'] = result
+        ev_dict['RES'] = 'Invalid syntax'
+
+        isolation = {
+            'globals': None,
+            'locals': None,
+            '__name__': None,
+            '__file__': None
+        }
+
+        try:
+            result = str(eval(expression, isolation))
+        except Exception as e:
+            self.debug('Eval failed with %s' % e)
+            return
         # if eval does not succeed, result will not be set.
         # 'Error' will be displayed instead.
+        ev_dict['RES'] = result
 
     def run_multiprocess(self, text: str) -> Union[str, None]:
         """
@@ -64,44 +99,37 @@ class Executor:
         Run a separate process with eval execution.
         Terminate it in case it's stuck.
         """
-        if len(text) < len("_eval"):
+        expression = self.parse_eval(text)
+        if not expression:
             return
-        expression = text.replace(f"{self.config.S}eval", '')
-        if '🔟' in expression:
-            expression = expression.replace('🔟', '10')
-        if '🔢' in expression:
-            expression = expression.replace('🔢', '1234')
-        expression = expression.strip()
-        if len(str(expression)) >= 40:
-            return "Sorry, your expression is too long."
-        else:
-            manager = Manager()
-            ev_dict = manager.dict()
-            try:
-                proc = Process(target=self.evaluater, args=(expression, ev_dict,))
-                proc.daemon = True
-                proc.start()
-                self.debug(f"Started new process: {proc}")
-                
-                proc.join(3)
-                if proc.is_alive():
-                    self.debug("Eval was terminated")
-                    proc.terminate()
-                print("Eval status: ", proc, ev_dict)
-                return ev_dict['RES']
-            except:
-                self.debug(str(traceback.print_exc()))
-                return
+        if type(expression) is tuple:
+            return expression[1]
+
+        manager = Manager()
+        ev_dict = manager.dict()
+        try:
+            proc = Process(target=self.evaluater, args=(expression, ev_dict,))
+            proc.daemon = True
+            proc.start()
+            self.debug("Started new process: %s" % str(proc))
+
+            proc.join(3)
+            if proc.is_alive():
+                proc.terminate()
+                self.debug("Eval has been terminated")
+
+            return ev_dict['RES']
+        except:
+            self.debug(str(traceback.print_exc()))
+            return
 
     async def call_executor(self, event):
         try:
-            out = self.run_pre_check(event.raw_text)
+            loop = asyncio.get_event_loop()
+            out = await loop.run_in_executor(None, self.run_multiprocess, event.raw_text)
             if out:
-                await event.reply(out)
-            else:
-                loop = asyncio.get_event_loop()
-                out = await loop.run_in_executor(None, self.run_multiprocess, event.raw_text)
-                if out:
+                if len(out) <= 2048:
                     await event.reply(out)
+                    return
         except:
             self.debug(traceback.print_exc())
