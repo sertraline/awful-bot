@@ -67,4 +67,6 @@ def main():
 if __name__ in '__main__':
     if os.name != 'nt':
         uvloop.install()
+    else:
+        sys.stdout.reconfigure(encoding='utf-8')
     main()
