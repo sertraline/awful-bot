@@ -19,7 +19,7 @@ class DebugLogging:
         _stream_handler.setFormatter(_formatter)
         _file_handler = RotatingFileHandler(filename="debug.log", 
                                             mode='a', maxBytes=10*1024*1024, 
-                                            backupCount=0, encoding=None, delay=0)
+                                            backupCount=0, encoding='utf-8', delay=0)
         _file_handler.setFormatter(_formatter)
         self.logger.addHandler(_file_handler)
         self.logger.addHandler(_stream_handler)
