@@ -1,0 +1,62 @@
+from ShazamAPI import Shazam
+import asyncio
+import uuid
+
+
+class Executor:
+
+    command = 'shazam'
+    use_call_name = False
+
+    def __init__(self, config, debugger, extractor):
+        self.config = config
+        self.debug = debugger
+        self.extractor = extractor
+
+    def help(self):
+        return "Shazam:\n  %s <song>" % self.command
+
+    def shazam(self, fname):
+        mp3_file_content_to_recognize = open(fname, 'rb').read()
+
+        shazam = Shazam(mp3_file_content_to_recognize)
+        recognize_generator = shazam.recognizeSong()
+        while True:
+            result = next(recognize_generator)
+            if result[1]['matches']:
+                track = result[1]['track']
+                print(track)
+
+                name = []
+                if 'title' in track:
+                    name.append(track['title'])
+                if 'subtitle' in track:
+                    name.append(track['subtitle'])
+                name = ' — '.join(name)
+
+                cover = None
+                if 'images' in track:
+                    images = track['images']
+                    if 'coverart' in images:
+                        cover = images['coverart']
+                return name, cover
+
+
+    async def call_executor(self, event, client, key):
+        self.debug('Call download media')
+        fname = str(uuid.uuid4())
+        fname = await self.extractor.download_media(event, client, fname)
+        if not fname:
+            return
+
+        reply = await event.reply("Processing started")
+        await client.download_media(event.message, file=fname)
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, self.shazam, fname)
+        if result:
+            msg = "%s\n" % result[0]
+            if result[1]:
+                msg += result[1]
+            await event.reply(msg)
+        await reply.delete()
+
