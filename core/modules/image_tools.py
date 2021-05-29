@@ -42,11 +42,14 @@ class Executor:
         Rotate image based on degree.
         Return filepath to rotated image.
         """
-        image = Image.open(filepath)
-        self.debug("Loaded image: %s" % filepath)
-        rotated = image.rotate(degree, expand=1)
-        rotated.save(filepath)
-        self.debug("Saved image: %s" % filepath)
+        image = cv2.imread(filepath, -1)
+        (h, w) = image.shape[:2]
+        center = (w / 2, h / 2)
+
+        M = cv2.getRotationMatrix2D(center, degree, 1.0)
+        rotated = cv2.warpAffine(image, M, (w, h))
+        cv2.imwrite(filepath, rotated)
+
         return filepath
 
     def flip(self, filepath: str, mode: str) -> str:
