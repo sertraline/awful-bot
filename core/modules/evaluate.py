@@ -71,8 +71,7 @@ class Executor:
 
     def evaluater(self, expression: str, ev_dict: dict) -> None:
         """
-        Strip the string from non-math characters.
-        Execute eval of the stripped string.
+        Execute eval of the parsed string.
         """
         # accepts shared dict
         ev_dict['RES'] = 'Invalid syntax'
