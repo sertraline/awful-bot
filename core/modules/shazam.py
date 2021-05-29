@@ -17,9 +17,9 @@ class Executor:
         return "Shazam:\n  %s <song>" % self.command
 
     def shazam(self, fname):
-        mp3_file_content_to_recognize = open(fname, 'rb').read()
+        content_to_recognize = open(fname, 'rb').read()
 
-        shazam = Shazam(mp3_file_content_to_recognize)
+        shazam = Shazam(content_to_recognize)
         recognize_generator = shazam.recognizeSong()
         while True:
             result = next(recognize_generator)
