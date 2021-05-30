@@ -70,7 +70,7 @@ class Executor:
     async def call_executor(self, event, client, key):
         self.debug('Call download media')
         fname = str(uuid.uuid4())
-        fname = await self.extractor.download_media(event, client, fname)
+        fname = await self.extractor.download_media(event, client, fname, accept_types=['video', 'audio'])
         if not fname:
             return
         reply = await event.reply("Processing started")

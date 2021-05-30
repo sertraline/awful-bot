@@ -158,7 +158,7 @@ class MediaExtractor:
     def __init__(self):
         pass
 
-    async def download_media(self, event, client, fname: str) -> str:
+    async def download_media(self, event, client, fname: str, accept_types: list = None) -> str:
         """
         Download image attached to message and return its filepath.
         If media is not available, look up for image attached to message
@@ -166,6 +166,9 @@ class MediaExtractor:
         """
         if event.message.media:
             mime = event.message.file.mime_type
+            if accept_types:
+                if not any([item in mime for item in accept_types]):
+                    return
             if 'image' in mime or 'video' in mime or 'audio' in mime:
                 ext = event.message.file.ext
                 if ext == '.jpe':
@@ -184,6 +187,9 @@ class MediaExtractor:
             if msg.id == reply_msg_id:
                 if msg.media:
                     mime = msg.file.mime_type
+                    if accept_types:
+                        if not any([item in mime for item in accept_types]):
+                            return
                     if 'image' in mime or 'video' in mime or 'audio' in mime:
                         ext = msg.file.ext
                         if ext == '.jpe':
