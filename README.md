@@ -23,6 +23,8 @@ See [installation and usage](https://github.com/sertraline/awful-bot/wiki/Instal
     * [Optical image recognition](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#optical-image-recognition)
     * [Translator](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#google-translate)
     * [Youtube downloads](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#youtube-dl)
+    * [Youtube search](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#youtube-search)
     * [VK downloads](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#vk-dl)
     * [Ping](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#ping)
+    * [Shazam](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#shazam)
     * [Image tools](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#image-tools)
