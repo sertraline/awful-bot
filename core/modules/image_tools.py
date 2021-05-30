@@ -1,5 +1,4 @@
 import asyncio
-import subprocess
 
 import cv2
 import os
@@ -7,7 +6,6 @@ import sys
 
 from PIL import Image
 from datetime import datetime
-from subprocess import check_output
 
 
 class Executor:
@@ -68,34 +66,6 @@ class Executor:
         cv2.imwrite(filepath, image)
         self.debug("Write the result (flip) to %s" % filepath)
         return filepath
-
-    def resize_ffmpeg(self, filepath: str, fx: float, fy: float, d='/') -> str:
-        """
-        Resize video to given aspect ratio using ffmpeg.
-        """
-        out_file = 'resized_'+filepath
-        fx, fy = int(fx), int(fy)
-        if fx > 4:
-            fx = 4
-        if fy > 4:
-            fy = 4
-
-        fix_division = ", crop=trunc(iw/2)*2:trunc(ih/2)*2"
-        if d == '/':
-            # downscale
-            scale = 'scale=iw/%d:ih/%d' % (fx, fy)
-        else:
-            # upscale
-            scale = 'scale=iw*%d:ih*%d' % (fx, fy)
-        scale_filter = scale + fix_division
-
-        try:
-            check_output(['ffmpeg', '-i', filepath, '-vf', scale_filter, out_file], timeout=240)
-        except subprocess.TimeoutExpired:
-            out_file = -1
-        os.remove(filepath)
-        return out_file
-
 
     def resize(self, filepath: str, fx: float, fy: float, method=None) -> str:
         """
@@ -212,16 +182,7 @@ class Executor:
             except:
                 return [-1, errmessg, fname]
 
-            if fname.endswith('.mp4'):
-                self.debug('Resizing video/gif')
-                if len(args) == 5:
-                    d = args[4]
-                else:
-                    d = '/'
-                filepath = self.resize_ffmpeg(fname, fx, fy, d)
-                if filepath == -1:
-                    return [-1, 'Timeout exceeded', fname]
-            elif len(args) == 4:
+            if len(args) == 4:
                 self.debug('Resizing image %f/%f' % (fx, fy))
                 filepath = self.resize(fname, fx, fy)
             elif len(args) == 5:
