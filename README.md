@@ -28,3 +28,4 @@ See [installation and usage](https://github.com/sertraline/awful-bot/wiki/Instal
     * [Ping](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#ping)
     * [Shazam](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#shazam)
     * [Image tools](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#image-tools)
+    * [Video tools](https://github.com/sertraline/awful-bot/wiki/Installation-and-usage#video-tools)
