@@ -35,12 +35,13 @@ class Executor:
         rotated = cv2.warpAffine(image, M, (w, h))
         return rotated
 
-    def animate(self, filepath, switch_direction=False):
+    def animate(self, filepath, switch_direction=False, scale=True):
         source = cv2.imread(filepath)
         height, width, channels = source.shape
 
-        source = cv2.resize(source, (height//2, width//2))
-        height, width, channels = source.shape
+        if scale:
+            source = cv2.resize(source, (height//2, width//2))
+            height, width, channels = source.shape
 
         FPS = 60
         degree = 360
@@ -56,10 +57,11 @@ class Executor:
                 continue
 
             image_rotated = self.rotate(source, angle, switch_direction)
-            resized = cv2.resize(image_rotated, (width*2, height*2))
-            cent0 = image_rotated.shape[0]//2
-            cent1 = image_rotated.shape[1]//2
-            image_rotated = resized[cent0:cent0+height, cent1:cent1+width]
+            if scale:
+                resized = cv2.resize(image_rotated, (width*2, height*2))
+                cent0 = image_rotated.shape[0]//2
+                cent1 = image_rotated.shape[1]//2
+                image_rotated = resized[cent0:cent0+height, cent1:cent1+width]
             video.write(image_rotated)
 
         video.release()
@@ -97,11 +99,14 @@ class Executor:
 
         if args[1] == "animate":
             switch_direction = False
-            if len(args) == 3:
-                if args[2] == '+':
+            scale = True
+            for arg in args[1:]:
+                if arg == '+':
                     switch_direction = True
+                if arg == 'noscale':
+                    scale = False
             try:
-                filepath = self.animate(fname, switch_direction)
+                filepath = self.animate(fname, switch_direction, scale)
             except:
                 self.debug(traceback.format_exc())
                 return [-1, 'An error has occured', fname]
