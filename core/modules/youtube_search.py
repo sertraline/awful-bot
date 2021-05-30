@@ -48,14 +48,24 @@ class Executor:
 
                 results = ''
                 for content in contents[:6]:
-                    if 'videoRenderer' not in content:
-                        continue
-                    renderer = content['videoRenderer']
-                    video_id = renderer['videoId']
-                    title = renderer['title']['runs'][0]['text']
-                    length = renderer['lengthText']['simpleText']
-                    result = '%s [%s]\n%s\n' % (title, length, 'https://youtube.com/watch?v=' + video_id)
-                    results += result
+                    if 'videoRenderer' in content:
+                        renderer = content['videoRenderer']
+                        video_id = renderer['videoId']
+                        title = renderer['title']['runs'][0]['text']
+                        length = renderer['lengthText']['simpleText']
+                        result = '%s [%s]\n%s\n' % (title, length, 'https://youtube.com/watch?v=' + video_id)
+                        results += result
+                    elif 'playlistRenderer' in content:
+                        renderer = content['playlistRenderer']
+                        playlist_id = renderer['playlistId']
+                        title = renderer['title']['simpleText']
+                        count = renderer['videoCount']
+                        endp = renderer['videos'][0]['childVideoRenderer']['navigationEndpoint']['watchEndpoint']
+                        video_id = endp['videoId']
+
+                        playlist_url = ('https://youtube.com/watch?v=' + video_id + '&list=' + playlist_id)
+                        result = '%s [%s items]\n%s\n' % (title, count, playlist_url)
+                        results += result
 
                 return results
 
